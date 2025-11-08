@@ -1,3 +1,11 @@
+---
+title: E-commerce Shopping Assistant
+emoji: 🛒
+colorFrom: indigo
+colorTo: purple
+sdk: docker
+pinned: false
+---
 # Intelligent E-commerce Shopping Assistant (Dianshan Agent)
 
 [![Hugging Face Spaces](https://huggingface.co/spaces/Liu9299/my-ecommerce-agent/badge.svg)](https://huggingface.co/spaces/Liu9299/my-ecommerce-agent)

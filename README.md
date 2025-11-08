@@ -1,3 +1,11 @@
+---
+title: 智能电商导购助手
+emoji: 🛒
+colorFrom: indigo
+colorTo: purple
+sdk: docker
+pinned: false
+---
 # 智能电商导购助手 (E-commerce Shopping Assistant)
 
 [![Hugging Face Spaces](https://huggingface.co/spaces/Liu9299/my-ecommerce-agent/badge.svg)](https://huggingface.co/spaces/Liu9299/my-ecommerce-agent)

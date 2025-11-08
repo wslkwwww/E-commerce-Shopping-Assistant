@@ -28,17 +28,24 @@ jobs:
           username: ${{ secrets.HF_USERNAME }}
           password: ${{ secrets.HF_TOKEN }}
 
-      # 步骤 3: 使用 Docker CLI 构建并推送镜像
-      # 我们直接使用 docker 命令来绕过 build-push-action 的自动小写问题
-      - name: Build and Push with Docker CLI
+      # 步骤 3: Build, Re-tag, and Push
+      # 解决 docker build 的小写限制和 HF Hub 的大小写敏感验证之间的冲突
+      - name: Build, Re-tag, and Push to Hugging Face Hub
         run: |
-          # 定义镜像标签，直接使用 Secret，保持大小写
-          IMAGE_TAG="registry.hf.space/${{ secrets.HF_SPACE_NAME }}:latest"
+          # 1. 定义两个标签
+          # BUILD_TAG: 全小写，用于满足 `docker build` 的要求
+          # PUSH_TAG: 保持原始大小写，用于推送到 Hugging Face
+          BUILD_TAG=$(echo "registry.hf.space/${{ secrets.HF_SPACE_NAME }}:latest" | tr '[:upper:]' '[:lower:]')
+          PUSH_TAG="registry.hf.space/${{ secrets.HF_SPACE_NAME }}:latest"
           
-          # 构建镜像
-          echo "Building image with tag: $IMAGE_TAG"
-          docker build -t "$IMAGE_TAG" .
+          # 2. 使用全小写的标签构建镜像
+          echo "Building image with lowercase tag: $BUILD_TAG"
+          docker build -t "$BUILD_TAG" .
           
-          # 推送镜像
-          echo "Pushing image to Hugging Face Hub"
-          docker push "$IMAGE_TAG"
+          # 3. 为已构建的镜像打上大小写正确的标签
+          echo "Re-tagging image to: $PUSH_TAG"
+          docker tag "$BUILD_TAG" "$PUSH_TAG"
+          
+          # 4. 推送大小写正确的标签
+          echo "Pushing correctly-cased tag to Hugging Face Hub"
+          docker push "$PUSH_TAG"

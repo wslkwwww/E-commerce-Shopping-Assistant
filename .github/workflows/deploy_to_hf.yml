@@ -1,0 +1,39 @@
+name: Deploy to Hugging Face Spaces
+
+on:
+  # 当代码推送到 main 分支时触发
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-push-to-hf:
+    runs-on: ubuntu-latest
+    steps:
+      # 步骤 1: 检出代码
+      # 使用 lfs: true 来确保 Git LFS 文件被正确拉取
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      # 步骤 2: 登录到 Hugging Face Docker Registry
+      # 您需要在 GitHub 仓库的 Secrets 中设置 HF_USERNAME 和 HF_TOKEN
+      # HF_USERNAME 是您的 Hugging Face 用户名
+      # HF_TOKEN 是一个具有 write 权限的 Hugging Face Access Token
+      - name: Login to Hugging Face Registry
+        uses: docker/login-action@v3
+        with:
+          registry: registry.hf.space
+          username: ${{ secrets.HF_USERNAME }}
+          password: ${{ secrets.HF_TOKEN }}
+
+      # 步骤 3: 构建并推送 Docker 镜像
+      # HF_SPACE_NAME 是您的 Hugging Face Space 的名称，格式为 "用户名/Space名"
+      # 例如: "my-user/my-cool-app"
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: registry.hf.space/${{ secrets.HF_SPACE_NAME }}:latest

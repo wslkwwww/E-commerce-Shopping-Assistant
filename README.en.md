@@ -1,5 +1,7 @@
 # Intelligent E-commerce Shopping Assistant (Dianshan Agent)
 
+[![Hugging Face Spaces](https://huggingface.co/spaces/Liu9299/my-ecommerce-agent/badge.svg)](https://huggingface.co/spaces/Liu9299/my-ecommerce-agent)
+
 This project is an intelligent e-commerce information query Agent system built on Large Language Models (LLM) and the LangChain framework. The system integrates **RAG (Retrieval-Augmented Generation)** technology, utilizing a **FAISS** vector database and the **BGE (BAAI General Embedding)** embedding model to achieve high-quality semantic product search. The backend uses a **MySQL** database and a **Flask** API service, making it a robust, intelligent, and commercially viable solution.
 
 The system can deeply understand users' natural language questions and intelligently perform semantic searches, query product information, and order details.
@@ -38,9 +40,21 @@ The system can deeply understand users' natural language questions and intellige
 ├── download_models.py        # Automated model download and vector index creation script
 ├── import_csv.py             # Script for batch importing product data
 ├── new_products.csv          # Sample product data file
+├── Dockerfile                # Docker configuration file
+├── .github/workflows/        # GitHub Actions CI/CD workflow
+│   └── deploy_to_hf.yml
 ├── requirements.txt          # Project dependencies
 └── README.md                 # This documentation file
 ```
+
+---
+
+## Deployment
+
+This project is configured with CI/CD using GitHub Actions for automatic deployment to Hugging Face Spaces.
+
+- **Trigger**: Every push to the `main` branch will trigger a workflow that builds the Docker image and deploys it to Hugging Face.
+- **Live Demo**: You can try the latest version of the application by clicking the Hugging Face badge above or by visiting the [live application](https://huggingface.co/spaces/Liu9299/my-ecommerce-agent).
 
 ---
 
@@ -82,18 +96,17 @@ This project provides a script to batch import product data from a CSV file.
   ```
   This command will import all product data from `new_products.csv` into your MySQL database.
 
-### 4. Download Models and Create Vector Index
+### 4. Download Models
 
-This is the **most critical** step. Run the provided automation script to handle all model downloading and data processing.
+Run the provided automation script to download the required embedding model.
 
 In the project root directory, run:
 ```bash
 python download_models.py
 ```
-This script will automatically:
-1.  Download the `bge-large-zh-v1.5` embedding model.
-2.  Read all product information from your MySQL database.
-3.  Vectorize the product information and create a FAISS index, saving it in the `faiss_index` directory.
+This script will automatically download the `bge-large-zh-v1.5` embedding model.
+
+**Note**: The creation of the vector index has been automated to run when the application starts.
 
 ### 5. Start the Backend Service
 
@@ -103,7 +116,7 @@ Once everything is set up, run the following command to start the Flask backend 
 python -m ecommerce_agent.app
 ```
 
-When you see the output `Running on http://0.0.0.0:5000` in your terminal, the backend service has started successfully.
+On startup, the service will automatically check for and create the vector index before launching the web server. When you see the output `Running on http://0.0.0.0:5000` in your terminal, the backend service has started successfully.
 
 ### 6. Make a Query
 

@@ -1,5 +1,7 @@
 # 智能电商导购助手 (E-commerce Shopping Assistant)
 
+[![Hugging Face Spaces](https://huggingface.co/spaces/Liu9299/my-ecommerce-agent/badge.svg)](https://huggingface.co/spaces/Liu9299/my-ecommerce-agent)
+
 本项目是一个基于大型语言模型（LLM）和 LangChain 框架构建的智能电商信息查询 Agent 系统。系统集成了 **RAG (Retrieval-Augmented Generation)** 技术，通过 **FAISS** 向量数据库和 **BGE-M3** 嵌入模型实现高质量的商品语义搜索。后端使用 **MySQL** 数据库和 **Flask** API 服务，使其成为一个健壮、智能且适合商用场景的解决方案。
 
 该系统能够深度理解用户的自然语言提问，并智能地执行语义搜索、查询商品信息和订单详情。
@@ -38,9 +40,21 @@
 ├── download_models.py        # 自动化模型下载和向量索引创建脚本
 ├── import_csv.py             # 用于批量导入商品数据的脚本
 ├── new_products.csv          # 示例商品数据文件
+├── Dockerfile                # Docker 配置文件
+├── .github/workflows/        # GitHub Actions CI/CD 工作流
+│   └── deploy_to_hf.yml
 ├── requirements.txt          # 项目依赖
 └── README.md                 # 本说明文件
 ```
+
+---
+
+## 部署
+
+本项目已通过 GitHub Actions 实现了 CI/CD，自动部署到 Hugging Face Spaces。
+
+- **触发方式**: 每当有新的代码推送到 `main` 分支时，GitHub Actions 会自动构建 Docker 镜像并将其部署到 Hugging Face。
+- **在线体验**: 您可以通过上方的 Hugging Face 徽章或直接访问 [在线应用](https://huggingface.co/spaces/Liu9299/my-ecommerce-agent) 来体验最新版本。
 
 ---
 
@@ -82,18 +96,17 @@
   ```
   该命令会将 `new_products.csv` 中的所有商品数据导入到您的 MySQL 数据库中。
 
-### 4. 下载模型并创建向量索引
+### 4. 下载模型
 
-这是**最关键**的一步。运行我们提供的自动化脚本，它将完成所有模型下载和数据处理工作。
+运行我们提供的自动化脚本来下载所需的嵌入模型。
 
 在项目根目录下运行：
 ```bash
 python download_models.py
 ```
-该脚本会自动：
-1.  下载 `bge-large-zh-v1.5` 嵌入模型。
-2.  从您的 MySQL 数据库中读取所有商品信息。
-3.  将商品信息向量化，并创建一个 FAISS 索引，保存在 `faiss_index` 目录中。
+该脚本会自动下载 `bge-large-zh-v1.5` 嵌入模型。
+
+**注意**: 向量索引的创建过程已自动化，并移至应用启动时执行。
 
 ### 5. 启动后端服务
 
@@ -103,7 +116,7 @@ python download_models.py
 python -m ecommerce_agent.app
 ```
 
-当您看到终端输出 `Running on http://0.0.0.0:5000` 时，表示后端服务已成功启动。
+服务启动时，它会自动检查并创建向量索引，然后启动 Web 服务。当您看到终端输出 `Running on http://0.0.0.0:5000` 时，表示后端服务已成功启动。
 
 ### 6. 进行查询
 

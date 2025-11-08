@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>电商智能查询系统</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+
+    <!-- 配置Tailwind自定义颜色和字体 -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3B82F6',
+                        secondary: '#10B981',
+                        neutral: '#1F2937',
+                        light: '#F3F4F6'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .scrollbar-hide {
+                -ms-overflow-style: none;
+                scrollbar-width: none;
+            }
+            .scrollbar-hide::-webkit-scrollbar {
+                display: none;
+            }
+            .shadow-soft {
+                box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen font-sans">
+    <div class="container mx-auto px-4 py-8 max-w-4xl">
+        <!-- 页面标题 -->
+        <header class="text-center mb-8">
+            <h1 class="text-[clamp(1.8rem,5vw,2.5rem)] font-bold text-neutral mb-2">
+                <i class="fa fa-shopping-bag text-primary mr-2"></i>电商智能查询系统
+            </h1>
+            <p class="text-gray-500">查询订单信息、商品详情，获取即时响应</p>
+            <div class="mt-4 flex justify-center items-center text-sm">
+                <span id="connection-status" class="flex items-center text-yellow-500">
+                    <i class="fa fa-circle-o-notch fa-spin mr-1"></i> 正在连接服务器...
+                </span>
+            </div>
+        </header>
+
+        <!-- 聊天界面 -->
+        <div class="bg-white rounded-xl shadow-soft overflow-hidden mb-6 flex flex-col h-[60vh] min-h-[400px]">
+            <!-- 聊天消息区域 -->
+            <div id="chat-messages" class="flex-1 p-4 overflow-y-auto scrollbar-hide space-y-4">
+                <!-- 欢迎消息 -->
+                <div class="flex items-start">
+                    <div class="bg-primary rounded-full p-2 text-white mr-3">
+                        <i class="fa fa-robot"></i>
+                    </div>
+                    <div class="bg-light rounded-lg rounded-tl-none px-4 py-3 max-w-[80%]">
+                        <p>欢迎使用电商智能查询系统！请输入您的问题，例如：</p>
+                        <ul class="list-disc list-inside mt-2 text-sm text-gray-600 space-y-1">
+                            <li>查询订单12345的信息</li>
+                            <li>搜索红色连衣裙</li>
+                            <li>商品ID 001的规格是什么？</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 输入区域 -->
+            <div class="border-t p-4">
+                <form id="query-form" class="flex gap-2">
+                    <input
+                        type="text"
+                        id="user-query"
+                        placeholder="请输入您的查询..."
+                        class="flex-1 px-4 py-3 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
+                        autocomplete="off"
+                    >
+                    <button
+                        type="submit"
+                        class="bg-primary hover:bg-primary/90 text-white px-6 py-3 rounded-lg transition-all flex items-center justify-center"
+                    >
+                        <i class="fa fa-paper-plane mr-2"></i>发送
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- 状态和信息区域 -->
+        <footer class="text-center text-sm text-gray-500">
+            <p>后端服务地址: <span class="text-primary font-medium">http://127.0.0.1:5000</span></p>
+            <p class="mt-1">© 2023 电商智能查询系统</p>
+        </footer>
+    </div>
+
+    <script>
+        // 后端API基础地址
+        const API_BASE_URL = 'http://127.0.0.1:5000';
+
+        // DOM元素
+        const chatMessages = document.getElementById('chat-messages');
+        const userQueryInput = document.getElementById('user-query');
+        const queryForm = document.getElementById('query-form');
+        const connectionStatus = document.getElementById('connection-status');
+
+        // 页面加载时检查服务器连接
+        checkServerConnection();
+
+        // 表单提交事件
+        queryForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const query = userQueryInput.value.trim();
+
+            if (!query) return;
+
+            // 添加用户消息到界面
+            addMessageToChat(query, 'user');
+
+            // 清空输入框
+            userQueryInput.value = '';
+
+            try {
+                // 显示加载状态
+                addLoadingIndicator();
+
+                // 发送请求到后端
+                const response = await fetch(`${API_BASE_URL}/api/query`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ question: query })
+                });
+
+                // 移除加载状态
+                removeLoadingIndicator();
+
+                const result = await response.json();
+
+                if (result.success) {
+                    // 添加AI响应到界面
+                    addMessageToChat(result.response, 'ai');
+                } else {
+                    addMessageToChat(`错误: ${result.error}`, 'error');
+                }
+            } catch (error) {
+                // 移除加载状态
+                removeLoadingIndicator();
+                addMessageToChat(`无法连接到服务器: ${error.message}`, 'error');
+                updateConnectionStatus(false);
+            }
+        });
+
+        // 检查服务器连接状态
+        async function checkServerConnection() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/health`);
+                if (response.ok) {
+                    updateConnectionStatus(true);
+                } else {
+                    updateConnectionStatus(false);
+                }
+            } catch (error) {
+                updateConnectionStatus(false);
+            }
+        }
+
+        // 更新连接状态显示
+        function updateConnectionStatus(isConnected) {
+            if (isConnected) {
+                connectionStatus.innerHTML = '<i class="fa fa-check-circle mr-1"></i> 已连接到服务器';
+                connectionStatus.className = 'flex items-center text-green-500';
+            } else {
+                connectionStatus.innerHTML = '<i class="fa fa-exclamation-triangle mr-1"></i> 无法连接到服务器';
+                connectionStatus.className = 'flex items-center text-red-500';
+            }
+        }
+
+        // 添加消息到聊天界面
+        function addMessageToChat(content, sender) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'flex items-start animate-fadeIn';
+
+            let avatar, messageBubble;
+
+            switch(sender) {
+                case 'user':
+                    messageDiv.className = 'flex items-start justify-end';
+                    avatar = `
+                        <div class="bg-gray-200 rounded-full p-2 text-neutral ml-3">
+                            <i class="fa fa-user"></i>
+                        </div>
+                    `;
+                    messageBubble = `
+                        <div class="bg-primary text-white rounded-lg rounded-tr-none px-4 py-3 max-w-[80%]">
+                            ${formatMessage(content)}
+                        </div>
+                    `;
+                    break;
+
+                case 'ai':
+                    avatar = `
+                        <div class="bg-primary rounded-full p-2 text-white mr-3">
+                            <i class="fa fa-robot"></i>
+                        </div>
+                    `;
+                    messageBubble = `
+                        <div class="bg-light rounded-lg rounded-tl-none px-4 py-3 max-w-[80%]">
+                            ${formatMessage(content)}
+                        </div>
+                    `;
+                    break;
+
+                case 'error':
+                    avatar = `
+                        <div class="bg-red-500 rounded-full p-2 text-white mr-3">
+                            <i class="fa fa-exclamation-circle"></i>
+                        </div>
+                    `;
+                    messageBubble = `
+                        <div class="bg-red-50 rounded-lg rounded-tl-none px-4 py-3 max-w-[80%] text-red-700">
+                            ${formatMessage(content)}
+                        </div>
+                    `;
+                    break;
+            }
+
+            messageDiv.innerHTML = sender === 'user' ? `${messageBubble}${avatar}` : `${avatar}${messageBubble}`;
+            chatMessages.appendChild(messageDiv);
+
+            // 滚动到底部
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        // 添加加载指示器
+        function addLoadingIndicator() {
+            const loadingDiv = document.createElement('div');
+            loadingDiv.id = 'loading-indicator';
+            loadingDiv.className = 'flex items-start';
+            loadingDiv.innerHTML = `
+                <div class="bg-primary rounded-full p-2 text-white mr-3">
+                    <i class="fa fa-robot"></i>
+                </div>
+                <div class="bg-light rounded-lg rounded-tl-none px-4 py-3 max-w-[80%]">
+                    <div class="flex space-x-2">
+                        <div class="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
+                        <div class="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 0.2s"></div>
+                        <div class="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 0.4s"></div>
+                    </div>
+                </div>
+            `;
+            chatMessages.appendChild(loadingDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        // 移除加载指示器
+        function removeLoadingIndicator() {
+            const loadingDiv = document.getElementById('loading-indicator');
+            if (loadingDiv) {
+                loadingDiv.remove();
+            }
+        }
+
+        // 格式化消息内容（处理换行等）
+        function formatMessage(content) {
+            // 将换行符转换为<br>
+            return content.replace(/\n/g, '<br>')
+                // 突出显示订单号和商品ID
+                .replace(/(订单\d+)/g, '<span class="font-semibold text-blue-600">$1</span>')
+                .replace(/(商品ID\s*\d+)/g, '<span class="font-semibold text-green-600">$1</span>');
+        }
+
+        // 添加动画样式
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes fadeIn {
+                from { opacity: 0; transform: translateY(10px); }
+                to { opacity: 1; transform: translateY(0); }
+            }
+            .animate-fadeIn {
+                animation: fadeIn 0.3s ease forwards;
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+</html>

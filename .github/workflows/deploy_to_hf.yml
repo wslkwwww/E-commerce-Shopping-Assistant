@@ -28,12 +28,17 @@ jobs:
           username: ${{ secrets.HF_USERNAME }}
           password: ${{ secrets.HF_TOKEN }}
 
-      # 步骤 3: 构建并推送 Docker 镜像
-      # HF_SPACE_NAME 是您的 Hugging Face Space 的名称，格式为 "用户名/Space名"
-      # 例如: "my-user/my-cool-app"
-      - name: Build and push
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          push: true
-          tags: registry.hf.space/${{ secrets.HF_SPACE_NAME }}:latest
+      # 步骤 3: 使用 Docker CLI 构建并推送镜像
+      # 我们直接使用 docker 命令来绕过 build-push-action 的自动小写问题
+      - name: Build and Push with Docker CLI
+        run: |
+          # 定义镜像标签，直接使用 Secret，保持大小写
+          IMAGE_TAG="registry.hf.space/${{ secrets.HF_SPACE_NAME }}:latest"
+          
+          # 构建镜像
+          echo "Building image with tag: $IMAGE_TAG"
+          docker build -t "$IMAGE_TAG" .
+          
+          # 推送镜像
+          echo "Pushing image to Hugging Face Hub"
+          docker push "$IMAGE_TAG"

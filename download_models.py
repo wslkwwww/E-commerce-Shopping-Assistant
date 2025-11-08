@@ -172,7 +172,6 @@ def create_vector_store():
 
 
 if __name__ == "__main__":
-    # 1. 下载模型
+    # 在 Docker 构建阶段，我们只下载模型。
+    # 向量索引将在应用启动时根据数据库动态创建。
     setup_models()
-    # 2. 创建向量索引
-    create_vector_store()

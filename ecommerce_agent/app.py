@@ -6,6 +6,7 @@ from .config import (
 )
 from .agents import AccessAgent
 from . import mysql_db # 导入新的MySQL模块
+import download_models # 导入模型下载和向量创建脚本
 
 # --- 日志配置 ---
 logging.basicConfig(
@@ -24,9 +25,16 @@ CORS(app)
 with app.app_context():
     logger.info("Flask 应用启动，正在检查并初始化数据库...")
     mysql_db.init_database()
-    # 可选：如果数据库为空，可以插入测试数据
-    # mysql_db.insert_test_data()
     logger.info("数据库初始化完成。")
+
+    # 新增：检查并创建向量索引
+    # 这确保了应用启动时，向量存储总是最新的
+    logger.info("正在检查并创建商品向量索引...")
+    if download_models.create_vector_store():
+        logger.info("向量索引成功创建或已是最新。")
+    else:
+        # 这是一个非致命错误，应用可以继续运行，但搜索功能可能受限
+        logger.warning("创建向量索引失败。应用将继续运行，但语义搜索功能可能不可用。")
 
 # 初始化接入Agent
 llm_config = {

@@ -28,19 +28,12 @@ jobs:
           username: ${{ secrets.HF_USERNAME }}
           password: ${{ secrets.HF_TOKEN }}
 
-      # 新增步骤: 将 Space 名称转换为小写
-      # Docker 镜像标签要求仓库名称为小写
-      - name: Lowercase Space Name
-        id: space_name_lower
-        run: echo "name=$(echo ${{ secrets.HF_SPACE_NAME }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
-
       # 步骤 3: 构建并推送 Docker 镜像
       # HF_SPACE_NAME 是您的 Hugging Face Space 的名称，格式为 "用户名/Space名"
       # 例如: "my-user/my-cool-app"
-      # 我们使用上一步转换后的小写名称
       - name: Build and push
         uses: docker/build-push-action@v5
         with:
           context: .
           push: true
-          tags: registry.hf.space/${{ steps.space_name_lower.outputs.name }}:latest
+          tags: registry.hf.space/${{ secrets.HF_SPACE_NAME }}:latest

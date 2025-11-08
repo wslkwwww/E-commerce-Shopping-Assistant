@@ -7,45 +7,25 @@ on:
       - main
 
 jobs:
-  build-and-push-to-hf:
+  deploy-to-hub:
     runs-on: ubuntu-latest
     steps:
-      # 步骤 1: 检出代码
-      # 使用 lfs: true 来确保 Git LFS 文件被正确拉取
+      # 步骤 1: 检出您的 GitHub 仓库代码
       - name: Checkout
         uses: actions/checkout@v4
         with:
+          fetch-depth: 0
           lfs: true
 
-      # 步骤 2: 登录到 Hugging Face Docker Registry
-      # 您需要在 GitHub 仓库的 Secrets 中设置 HF_USERNAME 和 HF_TOKEN
-      # HF_USERNAME 是您的 Hugging Face 用户名
-      # HF_TOKEN 是一个具有 write 权限的 Hugging Face Access Token
-      - name: Login to Hugging Face Registry
-        uses: docker/login-action@v3
-        with:
-          registry: registry.hf.space
-          username: ${{ secrets.HF_USERNAME }}
-          password: ${{ secrets.HF_TOKEN }}
-
-      # 步骤 3: Build, Re-tag, and Push
-      # 解决 docker build 的小写限制和 HF Hub 的大小写敏感验证之间的冲突
-      - name: Build, Re-tag, and Push to Hugging Face Hub
+      # 步骤 2: 将代码直接推送到 Hugging Face Space 的 Git 仓库
+      # 这个方法绕过了所有 Docker 客户端的大小写问题
+      - name: Push to Hugging Face Hub
+        env:
+          # HF_SPACE_NAME 的格式应为 "用户名/Space名"，例如 "Liu9299/my-ecommerce-agent"
+          # HF_TOKEN 是一个具有 write 权限的 Hugging Face 访问令牌
+          HF_SPACE_NAME: ${{ secrets.HF_SPACE_NAME }}
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
-          # 1. 定义两个标签
-          # BUILD_TAG: 全小写，用于满足 `docker build` 的要求
-          # PUSH_TAG: 保持原始大小写，用于推送到 Hugging Face
-          BUILD_TAG=$(echo "registry.hf.space/${{ secrets.HF_SPACE_NAME }}:latest" | tr '[:upper:]' '[:lower:]')
-          PUSH_TAG="registry.hf.space/${{ secrets.HF_SPACE_NAME }}:latest"
-          
-          # 2. 使用全小写的标签构建镜像
-          echo "Building image with lowercase tag: $BUILD_TAG"
-          docker build -t "$BUILD_TAG" .
-          
-          # 3. 为已构建的镜像打上大小写正确的标签
-          echo "Re-tagging image to: $PUSH_TAG"
-          docker tag "$BUILD_TAG" "$PUSH_TAG"
-          
-          # 4. 推送大小写正确的标签
-          echo "Pushing correctly-cased tag to Hugging Face Hub"
-          docker push "$PUSH_TAG"
+          # 使用您的 HF_TOKEN 作为密码，将代码强制推送到 Space 仓库的 main 分支
+          # 我们使用 "user" 作为 git 用户名，这是使用 token 进行认证的推荐方式
+          git push "https://user:${HF_TOKEN}@huggingface.co/spaces/${HF_SPACE_NAME}" main --force
